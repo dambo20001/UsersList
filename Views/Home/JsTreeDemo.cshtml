@@ -1,0 +1,470 @@
+﻿
+
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>JsTree Demo</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.2.1/themes/default/style.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.12.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.2.1/jstree.min.js"></script>
+    <script>
+        var parent;
+
+        $(function () {
+
+            $('#html1').jstree({
+                'core': {
+                    'data': {
+                        'url': '/Home/Nodes',
+
+                    }
+                }
+            });
+            $('#html1')
+                // listen for event
+                .on('changed.jstree', function (e, data) {
+                    var i, j, r = [];
+                    for (i = 0, j = data.selected.length; i < j; i++) {
+                        r.push(data.instance.get_node(data.selected[i]).id);
+                    }
+                    parent = r.join(', ');
+                    $('#event_result').html('Selected: ' + r.join(', '));
+                    document.getElementById("NhomCha").value = parent;
+                    $.ajax({
+                        url: 'https://localhost:44333/Home/Hienthi',
+                        method: 'GET',
+                        data: { groupId: data.node.id },
+                        dataType:'json',
+                        //success: function (d) {
+                        //    console.log('Thành công')
+                        //}
+                        success: function (users) {
+                            $('#usersTable tbody').empty();
+                            
+                            users.forEach(function (user, index) {
+                                
+                                var row = $('<tr>');
+                                row.append($('<td>').text(index + 1));
+                                row.append($('<td>').text(user.fullname));
+                                row.append($('<td>').text(user.username));
+                                row.append($('<td>').text(user.date));
+                                row.append($('<td>').text(user.gender));
+                                row.append($('<td>').text(user.number));
+                                row.append($('<td>').text(user.email));
+                                row.append($('<td>').html(`
+                                                     <button onclick="showEditUserForm('${user.username}', '${user.fullname}', '${user.date}', '${user.gender}', '${user.number}', '${user.email}','${user.id}')">Edit</button>
+                                                     <button onclick="deleteUser('${user.id}')">Delete</button>
+                                                     <button onclick="showUserDetails('${user.username}', '${user.fullname}', '${user.date}', '${user.gender}', '${user.number}', '${user.email}','${user.id}')">Details</button>
+                                                    `));
+                                $('#usersTable tbody').append(row);
+                            });
+                        },
+                        error: function () {
+                            alert('Failed to load users.');
+                        }
+                    })
+                })
+                // create the instance
+                .jstree();
+            $('#html1').on('select_node.jstree', function (e, data) {
+                document.getElementById('RightPannel').style.display = "block";
+
+            // Gửi yêu cầu Ajax để lấy thông tin nhóm con theo groupId và hiển thị form sửa nhóm
+            $.ajax({
+                url: 'https://localhost:44333/Home/SuaNhom',
+                type: 'GET',
+                dataType: 'json',
+                data: { groupId: data.node.id },
+                success: function (d) {
+                    console.log(d)
+                    $('#groupName').val(d[0].name);
+                    $('#groupCode').val(d[0].code);
+                    $('#Name').val(d[0].name);
+                    $('#Code').val(d[0].code);
+                    $('#groupId').val(d[0].id);
+                    $('#GroupId').val(d[0].id);
+                    // Ví dụ: $('#editForm').html(response);
+                },
+            });
+        });
+        });
+        function LuuForm() {
+            var tenNhom = $('#tenNhom').val();
+            var nhomCha = $('#NhomCha').val();
+            var maNhom = $('#CodeNhom').val();
+            $.ajax({
+                url: 'https://localhost:44333/Home/TaoNhom?tenNhom=' + tenNhom + '&NhomCha=' + nhomCha + '&maNhom=' + maNhom,
+                method: 'GET',
+                success: function (d) {
+                    console.log('Thành công')
+                }
+            })
+        }
+        function LuuForm2() {
+            var tenNhom = $('#groupName').val();
+            var IdNhom = $('#groupCode').val();
+            var Id = Number($('#groupId').val());
+            $.ajax({
+                url: 'https://localhost:44333/Home/CapNhatNhom?tenNhom=' + tenNhom + '&IdNhom=' + IdNhom + '&Id=' + Id,
+                method: 'GET',
+                success: function (response) {
+                    console.log('thành công')
+                }
+            })
+        }
+        function CreateGroup() {
+            var a = document.getElementById('CreateGroup');
+            if (a.style.display == "none") {
+                document.getElementById('CreateGroup').style.display = 'block';
+            } else {
+                document.getElementById('CreateGroup').style.display = 'none';
+            }
+
+        }
+        function editGroupForm() {
+            var a = document.getElementById('editGroupForm');
+            if (a.style.display == "none") {
+                a.style.display = 'block';
+            } else {
+                a.style.display = 'none';
+            }
+
+        }
+        function deleteGroup() {
+            var Id = Number($('#groupId').val());
+            $.ajax({
+                url: 'https://localhost:44333/Home/XoaNhom?Id='+Id,
+                method: 'GET',
+                success: function (response) {
+                    location.reload()
+                    console.log('thành công')
+                }
+            })
+        }
+        function deleteUser(id) {
+            $.ajax({
+                url: 'https://localhost:44333/Home/XoaNguoiDung?Id=' + id,
+                method: 'GET',
+                success: function (response) {
+                    location.reload()
+                    console.log('thành công')
+                }
+            })
+        }
+        function xemchitiet() {
+            var a = document.getElementById('XemChiTiet');
+            if (a.style.display == "none") {
+                a.style.display = 'block';
+            } else {
+                a.style.display = 'none';
+            }
+
+        }
+        function DangKiNguoiDung() {
+
+
+            // Lấy thông tin người dùng từ form
+            var HoVaTen = $('#FullName').val();
+            var TaiKhoan = $('#UserName').val();
+            var NgaySinh = $('#Date').val();
+            var GioiTinh = document.getElementById('Gender').value;
+            var SDT = $('#Number').val();
+            var email = $('#Email').val();
+            var GroupId = $('#GroupId').val();
+            
+            // Gửi dữ liệu người dùng mới đến server để lưu trữ
+            $.ajax({
+                url: 'https://localhost:44333/Home/TaoNguoiDungMoi',
+                type: 'POST',
+                data: {
+                    FullName: HoVaTen,
+                    UserName: TaiKhoan,
+                    Date: NgaySinh,
+                    Gender: GioiTinh,
+                    Number: SDT,
+                    Email: email,
+                    GroupId: GroupId,
+                },
+                success: function (result) {
+                    console.log('done');
+
+                }
+            })
+        }
+        function showUserDetails(username, fullname, date, gender, number, email, id) {
+            $('#read-username').val(username);
+            $('#read-fullname').val(fullname);
+            $('#read-date').val(date);
+            $('#read-gender').val(gender);
+            $('#read-number').val(number);
+            $('#read-email').val(email);
+            $('#read-id').val(id);
+            $('#read-user-form').show();
+        }
+        function showEditUserForm(username, fullname, date, gender, number, email, id) {
+            // Đặt giá trị cho các trường nhập liệu trong form
+            $('#edit-username').val(username);
+            $('#edit-fullname').val(fullname);
+            $('#edit-dob').val(date);
+            $('#edit-gender').val(gender);
+            $('#edit-number').val(number);
+            $('#edit-email').val(email);
+            $('#edit-id').val(id);
+            // Hiển thị form chỉnh sửa người dùng
+            $('#edit-user-form').show();
+           
+
+        }
+        function CapNhatNguoiDung() {
+            var Fullname = $('#edit-fullname').val();
+            var Username = $('#edit-username').val();         
+            var date = $('#edit-date').val();
+            var Gender = $('#edit-gender').val();
+            var Number = $('#edit-number').val();
+            var Email = $('#edit-email').val();
+            var id = $('#edit-id').val();
+            $.ajax({
+                url: 'https://localhost:44333/Home/ChinhSuaNguoiDung',
+                type: 'GET',
+                data: {
+                    FullName: Fullname,
+                    UserName: Username,
+                    Date: date,
+                    Gender: Gender,
+                    Number: Number,
+                    Email: Email,
+                    GroupId: GroupId,
+                    Id: id,
+                },
+                success: function (result) {
+                    console.log('done');
+
+                }
+            })
+        }
+            // Lấy thông tin người dùng từ form
+            
+
+
+        // Hủy bỏ chỉnh sửa người dùng
+        function cancelEditUser() {
+            // Ẩn form chỉnh sửa người dùng
+            $('#edit-user-form').hide();
+            $('#read-user-form').hide();
+        }
+        function formDangKyNguoiDung() {
+            a = document.getElementById('formDangKyNguoiDung')
+            if (a.style.display == "none") {
+                a.style.display = "block";
+            } else {
+                a.style.display = "none";
+            }
+        }
+    </script>
+    <style>
+        *{
+            padding: 0px;
+            margin: 0px;
+        }
+        .contain{
+            height:100vh;
+            width:100%;
+            display:flex;
+        }
+        #LeftPannel{
+            height:100vh;
+            width:30%;
+        }
+        #RightPannel{
+            height:100vh;
+            width:100%;
+        }
+        #hello {
+            margin-left: 200px;
+            margin-top: 200px;
+        }
+
+        #userList {
+            height: 300px;
+            width: 300px;
+            display: block;
+        }
+        #CreateGroup{
+            display:none;
+        }
+        #editGroupForm{
+            display:none;
+        }
+        #XemChiTiet{
+            display:none;
+        }
+        #usersTable{
+            width:100%;
+            height:auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="contain">
+        <div id="LeftPannel">
+            <div id="html1"></div>
+            <p id="event_result"></p>
+            <div class="nutbam">
+                <button type="button" onclick="CreateGroup()">Create</button>
+                <button type="button" onclick="editGroupForm()">Edit</button>
+                <button type="button" onclick="deleteGroup()">Delete</button>
+                <button type="button" onclick="xemchitiet()">Details</button>
+            </div>
+            @*Tạo nhóm*@
+            <form id="CreateGroup">
+                <div class="form-group">
+                    <label>Tên nhóm</label>
+                    <input type="text" class="form-control" id="tenNhom">
+                </div>
+                <div class="form-group">
+                    <label>Mã nhóm</label>
+                    <input type="text" class="form-control" id="CodeNhom">
+                </div>
+                <div class="form-group">
+                    <label style="display:none">Nhóm Cha</label>
+                    <input type="text" class="form-control" id="NhomCha" style="display:none">
+                </div>
+                <button type="submit" onclick="LuuForm()" class="btn btn-default">Submit</button>
+            </form>
+            @*Edit Nhóm*@
+            <form id="editGroupForm">
+                <div class="form-group">
+                    <label style="display:none">Id nhóm</label>
+                    <input type="text" class="form-control" style="display:none" id="groupId">
+                </div>
+                <div class="form-group">
+                    <label>Tên nhóm</label>
+                    <input type="text" class="form-control" id="groupName">
+                </div>
+                <div class="form-group">
+                    <label>Mã nhóm</label>
+                    <input type="text" class="form-control" id="groupCode">
+                </div>
+                <button type="submit" onclick="LuuForm2()" class="btn btn-default">Submit</button>
+            </form>
+            @*Xem chi tiết*@
+            <form id="XemChiTiet">
+                <div class="form-group">
+                    <label>Mã nhóm</label>
+                    <input type="text" class="form-control" id="Code" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Tên Nhóm</label>
+                    <input type="text" class="form-control" id="Name" readonly>
+                </div>
+            </form>
+        </div>
+            
+        <div id="RightPannel" style="display:none">
+            <button onclick="formDangKyNguoiDung()">Đăng kí </button>
+            <table id="usersTable" class="table">
+                <thead>
+                    <tr>
+                        <th>STT</th>
+                        <th>Họ và tên</th>
+                        <th>Tài khoản</th>
+                        <th>Ngày sinh</th>
+                        <th>Giới tính</th>
+                        <th>Sđt</th>
+                        <th>Email</th>
+                        <th>Options</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+            <form id="formDangKyNguoiDung" style="display: none;">
+                <div>
+                    <label for="HoVaTen">Họ và tên</label>
+                    <input type="text" id="FullName" name="FullName" required>
+                </div>
+                <div>
+                    <label for="TaiKhoan">Tài khoản</label>
+                    <input type="text" id="UserName" name="UserName" required>
+                </div>
+                <div>
+                    <label for="NgaySinh">Ngày sinh</label>
+                    <input type="date" id="Date" name="Date" required>
+                </div>
+                <div>
+                    <label for="Gender">Giới tính</label>
+                    <select id="Gender" required>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                    </select><br>
+                </div>
+                <div>
+                    <label for="SDT">Số điện thoại</label>
+                    <input type="text" id="Number" name="Number" required>
+                </div>
+                <div>
+                    <label for="email">Email:</label>
+                    <input type="email" id="Email" name="Email" required>
+                </div>
+                <div>
+                    <label for="MaNhom" style="display: none;">Id Nhóm</label>
+                    <input type="text" id="GroupId" name="GroupId" style="display: none;" required>
+                </div>
+                <div>
+                    <input type="submit" onclick="DangKiNguoiDung()">
+                </div>
+            </form>
+            <div id="edit-user-form" style="display: none;">
+                <h3>Edit User</h3>
+                <form>
+                    <label for="edit-username">Username:</label>
+                    <input type="text" id="edit-username" name="UserName" required><br>
+                    <label for="edit-fullname">Full Name:</label>
+                    <input type="text" id="edit-fullname" name="FullName" required><br>
+                    <label for="edit-date">Date of Birth:</label>
+                    <input type="date" id="edit-date" name="Date" required><br>
+                    <label for="edit-gender">Gender:</label>
+                    <select id="edit-gender" required>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                    </select><br>
+                    <label for="edit-number">Phone:</label>
+                    <input type="text" id="edit-number" name="Number" required><br>
+                    <label for="edit-email">Email:</label>
+                    <input type="email" id="edit-email" name="Email" required><br>
+                    <input type="number" id="edit-id" name="Id" style="display: none;" readonly>
+                    <button type="submit" onclick="CapNhatNguoiDung()">Save</button>
+                    <button type="button" onclick="cancelEditUser()">Cancel</button>
+                </form>
+            </div>
+            <div id="read-user-form" style="display: none;">
+                <h3>Infor User</h3>
+                <form>
+                    <label for="read-username">Username:</label>
+                    <input type="text" id="read-username" name="UserName" readonly><br>
+                    <label for="read-fullname">Full Name:</label>
+                    <input type="text" id="read-fullname" name="FullName" readonly><br>
+                    <label for="read-date">Date of Birth:</label>
+                    <input type="text" id="read-date" name="Date" readonly><br>
+                    <label for="read-gender">Gender:</label>
+                    <input type="text" id="read-gender" name="Gender" readonly><br>
+                    <label for="read-number">Phone:</label>
+                    <input type="text" id="read-number" name="Number" readonly><br>
+                    <label for="read-email">Email:</label>
+                    <input type="email" id="read-email" name="Email" readonly><br>
+                    <label for="read-email">Id:</label>
+                    <input type="number" id="read-id" name="Id" readonly>
+                    <button type="button" onclick="cancelEditUser()">Cancel</button>
+                </form>
+            </div>
+        </div>
+    </div>  
+    
+    
+</body>
+</html>
